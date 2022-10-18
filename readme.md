@@ -1,4 +1,5 @@
 i was just bored 💀
+
 use python skull.py --help for more info
 
 highly recommend usage of a string no more than 5 characters long for testing
