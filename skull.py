@@ -3,6 +3,8 @@ import random
 import string
 import argparse
 
+count = 0
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Try and print a word by randomly generating it.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -19,7 +21,8 @@ def parse_args():
 def word_gen(letters, size):
     return ''.join(random.choices(letters, k=size))
 
-def iterate(i, verbose, letters, target_word, target_succ, count):
+def iterate(i, verbose, letters, target_word, target_succ):
+    global count
     rand_word = word_gen(letters, len(target_word))
     if rand_word==target_word:
         if verbose!=0:
@@ -40,12 +43,10 @@ def iterate(i, verbose, letters, target_word, target_succ, count):
 
     if verbose==2:
         print(f'Iteration {i+1}: {rand_word}')
-    return count
 
 def perform(target_word, iters=0, target_succ=1, verbose=0, match_case=False, use_spaces=False):
     start_time = time.time()
     letters = string.ascii_letters+' '
-    count = 0
     if not match_case:
         target_word.lower()
         letters = string.ascii_lowercase+' '
@@ -54,14 +55,14 @@ def perform(target_word, iters=0, target_succ=1, verbose=0, match_case=False, us
         target_word=target_word.replace(' ', '')
     if iters!=0:
         for i in range(iters):
-            count = iterate(i, verbose, letters, target_word, target_succ, count)
+            iterate(i, verbose, letters, target_word, target_succ)
             if count==target_succ and target_succ!=0:
                 break
 
     else:
         i = 0
         while True:
-            count = iterate(i, verbose, letters, target_word, target_succ, count)
+            iterate(i, verbose, letters, target_word, target_succ)
             i+=1
             if count==target_succ and target_succ!=0:
                 break
@@ -73,8 +74,6 @@ def perform(target_word, iters=0, target_succ=1, verbose=0, match_case=False, us
     print(f'Time taken for execution: {(end_time-start_time)}s')
 
     t = end_time-start_time
-    tot = (t/iters)*141167095653376
-    print((tot/86400)/365)
 
 def main():
     args = parse_args()
