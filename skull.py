@@ -2,6 +2,8 @@ import time
 import random 
 import string
 import argparse
+import multiprocessing
+from multiprocessing import Process
 
 count = 0
 
@@ -14,6 +16,7 @@ def parse_args():
     parser.add_argument('-c', '--case', action='store_true', help='Use if you want to match case')
     parser.add_argument('-s', '--space', action='store_true', help='Use if you want to consider spaces too')
     parser.add_argument('-v', '--verbose', type=int, default=0, help='0: Print word only, 1: Print additional info like number of iterations needed, number of matches, 2: Print word generated at each iteration')
+    parser.add_argument('-p', '--processors', type=int, default='100', help='Number of processers to use for parallel processing. Leaving it to default sets it to your maximum number of processors. Ignore the fact that it says 100')
 
     args = parser.parse_args()
     return args
@@ -38,14 +41,10 @@ def iterate(i, verbose, letters, target_word, target_succ):
                 print('Required number of targets found!')
                 print(f'Number of iterations required: {i+1}')
 
-    if verbose==0 and (i+1)%10000000==0:
-        print(f'The number of iterations is now {i+1}. Just thought you should know')
-
     if verbose==2:
         print(f'Iteration {i+1}: {rand_word}')
 
 def perform(target_word, iters=0, target_succ=1, verbose=0, match_case=False, use_spaces=False):
-    start_time = time.time()
     letters = string.ascii_letters+' '
     if not match_case:
         target_word.lower()
@@ -67,17 +66,40 @@ def perform(target_word, iters=0, target_succ=1, verbose=0, match_case=False, us
             if count==target_succ and target_succ!=0:
                 break
 
-    end_time = time.time()
     if verbose!=0:
         print()
         print(f'Total number of matches: {count}')
-    print(f'Time taken for execution: {(end_time-start_time)}s')
-
-    t = end_time-start_time
 
 def main():
+    start_time = time.time()
+
     args = parse_args()
-    perform(args.word, args.iters, args.target, args.verbose, args.case, args.space)
+
+    no_threads = max(min(args.processors, multiprocessing.cpu_count()), 1)
+
+    if no_threads != 1 and args.target != 0:
+        print('Multithreading is currently only supported with number of targets set to 0')
+        exit(0)
+
+    if no_threads == 1:
+        perform(args.word, args.iters, args.target, args.verbose, args.case, args.space)
+
+    else:
+        threads = []
+        for i in range(no_threads):
+            if args.iters == 0:
+                t = Process(target=perform, args=(args.word, args.iters, args.target, args.verbose, args.case, args.space))
+            else:
+                t = Process(target=perform, args=(args.word, int(args.iters/no_threads), args.target, args.verbose, args.case, args.space))
+            threads.append(t)
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+    end_time = time.time()
+    print(f'Time taken for execution: {(end_time-start_time)}s')
 
 if __name__ == '__main__':
     main()
